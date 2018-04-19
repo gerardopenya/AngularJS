@@ -1,0 +1,602 @@
+tomado de 
+https://www.youtube.com/watch?v=OhPFgqHz68o
+
+
+- Website: http://travistidwell.com/blog/2015/01...
+- Github: https://github.com/travist/meanapp
+- Presentation: http://travistidwell.com/presentation...
+
+
+
+install node
+install mongodb
+npm install -g grunt-cli
+npm instal -g bower
+
+run mongodb 
+>mongod
+
+
+crear dentro de la ruta de la app un directorio llamado server
+
+entrar en el y entonces iniciarlo con npm
+
+mkdir server
+cd server
+npm init
+
+
+iniciar con los parametros deseados
+
+
+
+instalar las dependencias
+
+
+npm install --save express
+npm install --save mongoose          ->verificar la version que requiere node-restful que en la fecha del tutorial era la 3   
+npm install --save mongoose@~3.8
+npm install --save node-restful         - > requiere mongoose 3  por lo que se puede instalar  c
+npm install --save method-override
+npm install --save body-parser
+npm install --save lodash     
+
+
+escribir el archivo bootstrap .... no parece referirse al proyecto bootstrap
+
+se crea el archivo 
+
+server/index.js
+
+dentro de el se colocan las "decoraciones"
+
+
+var express = require('express');
+var mongoose = requiere('mongoose');
+var bodyParser = require('body-parser');
+var methodOverride = require('method-override');
+var _ = require('lodash');
+
+// se crea la aplicacion
+
+var app = express();
+
+// se agrega el middleware necesario para la API REST esto interceptara cada llamada 
+
+app.use(bodyParser.urlencoded({extended : true}));
+app.use(bodyParser.json());
+app.use(methodOverride('X-HTTP-Method-Override'));
+
+
+
+
+//soporte CORS 
+
+app.use(function(req, res , next){
+	res.header('Access-Control-Allow-Origin', '*');
+	res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
+	res.header('Access-Control-Allow-Headers', 'Content-Type');
+	next();
+});
+
+
+
+//Se agrega soporte a la Api, es decir que devuelva un contenido que en algun caso podria ir dentro de la conexion con mongo
+
+app.user('/hello', function(req, res, next){
+	res.send('Hello World!');
+	next();
+));
+
+
+
+
+// conectar a MongoDB que debe estar ejecutandose
+
+mongoose.connect('mongodb://localhost/nombreDatabase');
+mongoose.connection.once('open', function(){
+	console.log('Listening on port XXXX...');
+	app.listen(XXX);  //definir puerto
+});
+
+
+
+En este punto se deberia poder ejecutar la aplicaicon y se desplegaria en la linea de comandos el mensaje de escuchando en el puerto seleccionado
+
+>server/node index.js
+
+
+
+
+
+********************************************************************************
+
+SE crea el modelo mediante los archivos que lo representaran
+********************************************************************************
+Crea una carpeta llamada models dentro de server
+
+server/mkdir models
+
+cd models
+
+se crea el modelo en nuestro caso son los distintos archivos que estaran en mongo
+
+Usuarios.js
+Inmueble.js
+InmuebleSHORT.js  // puede ya no ser necesario si mongo permite las consultas seleccionando ciertos campos del modelo.
+
+Dentro de cada uno de estos archivos se debera incluir 
+
+
+var mongoose = requiere('mongoose');
+
+//Create Schema
+
+var UsuarioSchema = new mongoose.Shchema({
+	nombre: { type : String, required : true},
+	direccion { type : String, required : false},
+	email { type : String, required : true},
+	deviceNumber { type : String, required : false}, ...
+
+
+});
+
+
+/// se exporta el schema
+
+module.exports = UsuariosSchema;
+
+********************************************************************************
+Se crea un indice para poder obtener en algun momento la lista de los esquemas 
+para ello se crea un archivo llamado index.js dentro de la carpeta de models
+********************************************************************************
+
+
+server>models>index.js
+
+dentro de index.js
+
+module.exports = {
+	usuario : require ('./Usuario.js');
+	.
+	.
+	.
+}
+
+
+Despues se incluye el indice dentro de 
+server/index.js
+
+mongoose.connection.once('open',function(){
+.
+.
+.
+//Load the models.
+app.models = require('./models/index');
+.
+.
+.
+app.listen(puerto)
+
+});
+
+
+********************************************************************************
+Ahora se crean los controladores
+********************************************************************************
+
+
+server/controllers/UsuarioController.js
+
+//Dentro de los controladores se agrega la dependencia
+
+var restufl = require('node-restful');
+
+module.exports = function(app, route){
+	//Setup the controller for REST
+	var rest = restufl.model(
+	'usuario',
+	app.models.usuario          // del indice de modelos 
+).methods(['get', 'put', 'post', 'delete']);  //se indica basicamente que queremos estas operaciones sobre el modelo usuario
+
+//REgister this endpoint with the application
+
+rest.register(app, route);
+
+//REturn middleware
+
+return function(req, res , next){
+	next();	
+};
+
+
+}
+
+
+-**********************************************************************
+se crean los Routes, 
+*******************************************************
+
+Se crea un archivo llamado routes.js dentro de server
+Basicamente se trata de asignar el controlador a una ruta
+
+server/routes.js
+
+dentro del archivo se incluye
+
+
+module.exports = {
+	'/usuario' : require('./controllers/UsuarioController');  //se asigna el controlador UsuarioController al path /usuario
+};
+
+
+********************************************************************
+Se registran los Routes en el archivo "bootstrap"
+***************************************************************
+
+server/index.js
+
+.
+.
+.
+app.models = require('./models/index');
+
+//load the routes.
+var routes = require('./routes');
+
+// _ es la variable creada con los exports de lodash (linea 47)  y esto lo que hara es iterar asignando a route el respectivo controller (cada uno de los exports que se encuentran en el archivo routes.js)
+
+_.each(routes, function(controller, route){  
+
+app.use(route, controller(app, route));
+
+});
+
+app.listen(puerto)
+
+
+
+***************************************************************************
+se puede aqui reiniciar el servidor y se pueden crear datos facilmente usando la extencion de chrome postman
+
+***********************************************************************
+***********************************************************************
+***********************************************************************
+***********************************************************************
+
+En este punto ya se puede comenzar a crear el cliente en AngularJS
+
+***********************************************************************
+***********************************************************************
+***********************************************************************
+***********************************************************************
+***********************************************************************
+
+Se crea una carpeta llamada cliente (al mismo nivel que server) y se instala el ambiente, en este caso utilizando Yeoman
+
+
+mkdir client
+cd client
+
+npm install -g grunt-cli bower yo generator-karma generator-angular
+
+
+se ejecuta yo
+yo angular
+
+
+el ejemplo utiliza sass con compass 
+incluye bootsrap asi como la version de bootstrap sass y desselecciona todos los modulos a excepcion de angular-route.js,
+angular-resource sera sustituido mas adelante por otro modulo que en opinion del instructor funciona mejor
+
+
+Despues que yo ha generado la plantilla del proyecto se puede levantar un servidor que debera mostrar el cliente generado
+
+OJO QUE CUANDO SALGA EL MENSAJE COMO 
+
+Done without errors.
+
+Hay que darle un enter para sobre escribir el package.json
+
+client/grunt serve
+
+
+SI ESTAS INSTALANDOLO EN UBUNTU CHECA EL DOCUMENTO 
+Creacion de app Angulrar en Ubuntu
+
+
+****************************************************************************************************
+Se utiliza yo para generar los ruteos (ROUTES ) es decir las vistas y las interconexiones que serviran para interactuar con el modelo
+****************************************************************************************************
+
+Dentro de la carpeta client se ejecuta el comando 
+
+client/yo angular:route usuarios
+
+
+Esto basicamente genera los archivos necesarios para la navegacion e interaccion con el modelo. 
+el nombre de 'usuarios' utilizado en el comando sera como se llamara la ruta
+
+en el resultado del comando se deben observar los archivos creados y los modificados 
+
+*************************************************************************************
+Se agregan los ruteos generados a la navegacion
+*******************************************************************************
+Esto es porque el instructor aprovecho la interfaz generada por yo y solo esta integrando al menu de navegacion sus nuevas rutas
+
+Se integra al archivo 
+client/app/index.html
+
+<script src="scripts/controllers/usuarios.js"></script>
+
+
+*****************************************************************************************************
+Modifica las vistas 
+*****************************************************************************************************
+modifica 
+app/views/usuarios.html
+
+para mostrar datos integrando los doble brakets que los obtienen del $scope de AngularJS
+
+**************************************************************************************************
+Modifica el controlador para poner el el $scope los datos que se desean mostrar en los views
+client/app/scripts/controllers/usuario.js
+**************************************************************************************************
+En esencia para hacer pruebas, si aqui se agregan valores al $scope ya deberian poder verse en los views
+
+
+********************************************************************************************************
+LIGANDO EL CLIENTE CON EL SERVIDOR
+********************************************************************************************************
+Para lograr hacer el enlace entre el $scope y el servidor es necesario agregar Restangular al proyecto.
+En este caso se usa Bower
+
+client/bower install --save restangular
+
+esto debe integrar la referencia  restangular al archivo client/app/index.html
+
+<script src="bower_components/restangular/dist/restangular.js"></script>
+
+
+*******************************************************************************************
+	AGREGANDO Y CONFIGURANDO RESTANGULAR	
+*******************************************************************************************
+Segun el expositor el mejor lugar para configurar restangular es en  el archivo
+
+app/scripts/app.js
+
+agregando el codigo
+
+angular.module('clientApp', ['ngRoute', 'restangular'] )
+.config(function( $routeProvider, RestangularProvider ){
+
+	RestangularProvider.setBaseUrl('http://localhost:puerto');
+
+	$routeProvider
+		.when('/',{
+			templateUrl: 'views/usuarios.html'
+			controller : 'UsuariosController'
+		})
+	.
+	.
+	.
+
+});
+	
+****************************************************************************************
+	AGREGANDO LOS FACTORIES para cada modelo
+***********************************************************
+dentro de 
+
+app/scripts/app.js
+
+
+se agrega, 
+
+$routeProvider
+  .when()
+  .
+  .
+  .
+
+
+.factory('UsuarioRestangular', function(Restangular){
+	return Restangular.withConfig(function(RestangularConfigurer){
+		RestangularConfigurer.setrestangularFields({
+			id: '_id'                    // Este caso es basicamente para interpolar el manejo del id entre mongo( _id ) y restangular (id)
+		});
+	});
+})
+
+.factory('Usuario', function(UsuarioRestangular){
+	return UsuarioRestangular.service('usuario'); // regresa el servicio UsuarioRestangular que apunta a la URI de 'Usuario' ( .service('usuario') apunta a la url dentro de nuestra API ) 
+}) 
+
+
+*********************************************************************************************************
+	SE MODIFICA EL CONTROLADOR PARA PODER OBTENER AHORA LOS DATOS DE LA BASE DE DATOS
+*********************************************************************************************************
+
+client/app/scripts/controllers/usuarios.js
+
+
+angular.module('clientApp')
+.controller('UsuariosCtrl' , function($scope, Usuario ){
+	$scope.usuario = Usuario.getList().$object;            //en este caso para obtener una lista AQUI SE OBSERVA LA CAPACIDAD DE TWO WAY BINDING, esto no es sincrono pero cuando se pueble el objeto $object con el resultado se actualizara el scope y automaticamente la vista
+} );
+
+***********************************************************************************************************
+ AGREGANDO CAPACIDADES CRUD
+***********************************************************************************************************
+
+Se ejecuta ahora para el resto de las operaciones los ruteos como se hizo en la linea 283
+
+dentro de la carpeta client
+
+client>
+
+yo angular:route usuario-add --uri=create/usuario
+yo angular:route usuario-view --uri=usuario/:id
+yo angular:route usuario-delete --uri=usuario/:id/delete
+yo angular:route usuario-edit --uri=usuario/:id/edit
+
+
+
+
+Despues de ejecutado deberan existir las nuevas vistas y controladores con los nombres indicados en lso comandos anteriores y el archivp app.js modificado de con los nuevos ruteos
+
+
+*****************************************************************************************************
+	ADECUACION DE LOS ARCHIVOS GENERADOS
+*****************************************************************************************************
+En este punto se deben modificar las vistas y los controladores para reflejar los datos que se desea utilizando los metodos proveidos por anguar
+
+ng-model
+ng-click
+
+
+un controlador para dar de alta un usuario por ejemplo debe de lucir mas omenos asi
+
+
+app/scripts/controllers/usuario-add.js
+
+.controller('UsuarioAddCtrl', function($scope, Usuario, $location){
+	$scope.usuario = {};
+
+	$scope.saveUsuario = function(){
+		Usuario.post($scope.usuario).then(function(){
+			$location.path('/usuarios');
+		});
+	};
+});
+
+
+
+
+Para una lectura por ejemplo el controlador debe ser algo parecido a 
+
+
+.controller('UsuarioViewCtrl', function($scope, $routeParams, Usuario){
+
+	$scope.viewUsuario = true;  // este es por que en ejemplo maneja la interfaz con tabs y esta variable es usada para controlarlas
+
+	$scope.usuario = Usuario.one($routeParams.id).get().$object;
+	
+});
+
+
+
+
+Para una eliminacion 
+
+app/scripts/controllers/movie-delete.js
+
+
+.controller('UsuarioDeleteCtrl', function($scope, $routeParams, Usuario, $location){
+
+	$scope.usuario = Usuario.one($routeParams.id).get().$object;
+	$scope.deleteUsuario = function(){
+		$scope.usuario.remove().then(function(){
+			$location.path('/usuarios');
+		});
+	};
+	$scope.back = function(){
+		$location.path('/usuario/' + $routeParams.id);
+	};
+	
+});
+
+
+
+
+
+para una modificacion
+Ya que una modificacion utiliza la misma interfaz que una alta, se utiliza un include del mismo layout 
+dentrto del archivo
+app/views/usuario-edit.html
+
+<ng-include src="'views/movie-add.html'"></ng-include>     // cuando se incluye una cadena debe de ponerse dentro de comillas simples !!
+
+
+
+En el archivo del controlador
+app/scripts/controllers/movie-edit.js
+
+
+.controller('UsuarioEditCtrl', 
+	function($scope
+	        ,$routeParams
+		,Usuario
+		$location){
+
+	$scope.editUsuario = true; // este es por que en ejemplo maneja la interfaz con tabs y esta variable es usada para controlarlas
+	$scope.usuario = {}
+
+	Usuario.one($routeParams.id).get().then( function(usuario){
+	   $scope.usuario = usuario;
+	   $scope.saveUsuario = function(){
+		$scope.usuario.save().then(function (){
+			$location.path('/usuario/' + $routeParams.id);
+		});
+	   };
+        });	
+});
+
+
+
+
+
+************************************************************************************************************
+Las tabs de navegacion pueden ser 
+************************************************************************************************************
+
+se crea el archivo con los tabs
+
+app/views/movie-view.html
+
+<ul class="nav nav-tabs">
+	<li role="presentation" ng-class = "{active: viewUsuario}"><a ng-href="/#/usuario/{{ usuari.id}}">View</a></li>
+	<li role="presentation" ng-class = "{active: editUsuario}"><a ng-href="/#/usuario/{{ usuari.id}}/edit">Edit</a></li>
+</ul>
+
+
+en el archivo
+
+app/views/usuario-view.html
+
+<ng-include src="'views/usuario-nav.html'" ></ng-include>
+
+
+app/views/usuario-edit.html
+
+<ng-include src="'views/usuario-nav.html'" ></ng-include>
+<ng-include src="'views/usuario-addv.html'" ></ng-include>
+
+
+
+*************************************************************************************************************************
+	los componentes como botones de accion pueden ser
+*************************************************************************************************************************
+
+<a class="btn btn-primary" href="/#/create/movie" >< span class="glyphicon glyphicon-plus" ></span> crea Usuario</a>
+
+
+si se quiere agregar por ejemplo a cada registro de una lista los botones de editar o eliminar puede hacerse como :
+
+
+<tr ng-repeat="usuario in usuarios">
+	<td> <a ng-href="/#/usuario/{{ usuario.id }}"> {{ usuario.email}} </a> </td>
+	<td> {{usuario.nombres}} </td>
+	<td>
+		<div class="button-group">
+			<a ng-href="/#/usuario/{{usuario.id}}/edit" class="btn btn-default">
+				<span class="glyphicon glyphicion-edit"><span>
+			</a>
+			<a ng-href="/#/usuario/{{usuario.id}}/delete" class="btn btn-danger">
+				<span class="glyphicon glyphicion-remove-circle"><span>
+			</a>
+		</div>
+	</td>
+</tr>
+
+
