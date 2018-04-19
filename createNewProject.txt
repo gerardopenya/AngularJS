@@ -1,0 +1,13 @@
+#Install Angular CLI
+npm install -g @angular/cli
+
+#create new project
+ng new my-cool-project
+
+#move to the new project folder
+cd my-cool-project
+
+#start up the server
+ng serve
+
+
