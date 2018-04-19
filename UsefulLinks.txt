@@ -5,3 +5,10 @@ The full TypeScript Handbook: http://www.typescriptlang.org/docs/handbook/basic-
 More about the CLI: https://cli.angular.io/
 Most important => The CLI documentation: https://github.com/angular/angular-cli/wiki
 Need more insights into Angular? Check out the official docs: https://angular.io/docs
+
+Understanding the Angular Architecture: https://angular.io/guide/architecture
+Displaying Data: https://angular.io/guide/displaying-data
+A closer look at the template syntax: https://angular.io/guide/template-syntax
+Understanding the Component Lifecycle: https://angular.io/guide/lifecycle-hooks
+Understanding Component Interaction: https://angular.io/guide/component-interaction
+How to style Components: https://angular.io/guide/component-styles
